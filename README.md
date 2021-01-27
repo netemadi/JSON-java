@@ -1,15 +1,15 @@
-### 262P-milestone2
+## 262P-milestone2
 
 In this project we are forking the JSON-Java repo which has the package org.json.
 The aim of this prorject is to add 2 new functionality to this library.  
 In this project we are working on 3 different XML files in order to test our functionalities (small.xml, medium.xml, ...)
-#The first one is getting a reader and JSONPointer path:
+The first one is getting a reader and JSONPointer path:
   - The function will start parsing the XML file reading line by line (token by token)
   - Splitting the path: 
       * Path can be just the tag names like "wikimedia/siteinfo/namespaces" in "medium.xml" which should return an array of namespaces from XML file but in JSON file.
       * Or path can be "wikimedia/siteinfo/namespaces/namespace/2" in "medium.xml" which should return the third element of namespaces array as in JSON file.
 
-# Some of our edge cases which we are not covering in this project:
+Some of our edge cases which we are not covering in this project:
   - Sometimes in some XML files we see something like the blew open tag which has some keys and values ---> 
     "<mediawiki xmlns="Example1" xmlns:xsi="Example2" xsi:schemaLocation="Example3" version="0.10" xml:lang="en">" 
     this will be acceptable if there is no whitespaces between values, for example "xsi:schemaLocation="Example3 Example4" is not acceptable in our case and it will only return the first value not both. 
