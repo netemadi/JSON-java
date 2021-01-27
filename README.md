@@ -10,6 +10,7 @@ The first one is getting a reader and JSONPointer path:
       * Or path can be "wikimedia/siteinfo/namespaces/namespace/2" in "medium.xml" which should return the third element of namespaces array as in JSON file.
 
 Some of our edge cases which we are not covering in this project:
+  - Not considering nested array ---> Path "wikimedia/siteinfo/namespaces/namespace/1/key" is not acceptable in our program  
   - Sometimes in some XML files we see something like the blew open tag which has some keys and values ---> 
     ```xml
     <mediawiki xmlns="Example1" xmlns:xsi="Example2" xsi:schemaLocation="Example3" version="0.10" xml:lang="en">
