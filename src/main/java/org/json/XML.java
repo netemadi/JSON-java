@@ -29,7 +29,10 @@ import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /**
@@ -857,4 +860,289 @@ public class XML {
                         + ">" + string + "</" + tagName + ">";
 
     }
+
+    /**
+     * Milestone2, Part1
+     *
+     * Find the sub-object based on path from XML, return JSONObject
+     *
+     * @param reader
+     *            A Reader to XML file.
+     * @param path
+     *            a JSONPointer to use for getting the sub-object
+     * @return A JSONObject.
+     * @throws JSONException Thrown if there the path has a wrong key or not supported
+     */
+    public static JSONObject toJSONObject(Reader reader, JSONPointer path) throws JSONException{
+        String[] keys = path.toString().split("/");
+        boolean read = false;
+        boolean gotIndex = false;
+        int count = 0;
+        int arrayInx = -1;
+
+        if(path.toString().length() == 1 && path.toString().charAt(0) == '/'){ // path is the root --> /
+            return toJSONObject(reader);
+        }
+
+        ArrayList<String> tokens = new ArrayList<String>();
+        JSONObject jo = new JSONObject();
+        XMLTokener x = new XMLTokener(reader);
+        Object token = null;
+
+        try{
+        //ex: /catalog/book/1
+        for(int i = 1; i<keys.length; ) {
+            if(x.more()){
+                token = x.nextContent();
+                if(token instanceof String ){
+                    String s = (String)token;
+                    if(((i + 1) < keys.length)){
+                        if(keys[i + 1].matches("[-+]?\\d*\\.?\\d+")){ //if next key is an index for an array
+                            arrayInx = Integer.parseInt(keys[keys.length - 1]);
+                            gotIndex = true;
+                        }
+                    }
+                    if(!(s.equals("/"+keys[i])) && s.contains(keys[i]) && s.contains(">")){ //if openning tag
+                        if(i == keys.length-1 || read){ //need to parse opennign tag
+                            String[] insideTag = s.split(" ");
+                            for(int j =0; j< insideTag.length; j++){
+                                if(insideTag[j].equals(keys[i]) || insideTag[j].equals(keys[i]+">"))
+                                    continue;
+                                else if(insideTag[j].contains("=")){
+                                    String[] keyValue = insideTag[j].split("=");
+                                    String value =  keyValue[1];
+
+                                    if(value.contains(">")){
+                                        if(value.indexOf('>') != value.length()-1){
+                                            String[] contents = value.split(">");
+                                            tokens.add("content" + ">" + contents[1]);
+                                            tokens.add("/"+"content"+">");
+                                            value =contents[0];
+                                        }
+                                        else{
+                                            value = value.replace(">", "");
+                                        }
+                                    }
+
+                                    if(value.contains("\"")){
+                                        value = value.replaceAll("\"", "");
+                                    }
+                                    
+                                    tokens.add(keyValue[0] + ">" + value);
+                                    tokens.add("/"+keyValue[0]+">");
+                                }
+                            }
+                        }
+                        
+                        if(i == keys.length-1 || read){
+                            do{
+                                token = x.nextContent();
+                                if(token instanceof String ){
+                                    tokens.add((String)token);
+                                }
+                            }while(!(token.toString()).equals("/"+keys[i]+">"));
+                        }
+                        if(!gotIndex){
+                            i++;
+                        }
+                        if(read){
+                            break;
+                        }
+                    }
+                    if(gotIndex){
+                        if(s.equals("/"+keys[i]+">")){
+                            count++;
+                            if(count == arrayInx){
+                                read = true;
+                                
+                            }
+                        }
+                    }
+                }
+            }
+            else{ //could not find subobject based ob path
+                throw new JSONException("Given path is incorrect.");
+            }
+        }
+
+        String something = "";
+        for(int i=0; i<tokens.size()-1;i++){
+            String e = tokens.get(i);
+            something += ("<" + e);
+        }
+        Reader somethingReader = new StringReader(something);
+        jo = toJSONObject(somethingReader);
+    }
+    catch(JSONException e){
+        throw e;
+    }
+    catch(Exception e){
+        throw new JSONException("Object was not created. Parsing of the given Path is not supported. " + e.getMessage());
+    }
+
+        return jo;
+        
+    }
+
+
+    /**
+     * Milestone2, Part2
+     *
+     * Find the sub-object based on the given path from XML, and replace it with replacement object.
+     *
+     * @param reader
+     *            A Reader to XML file.
+     * @param path
+     *            a JSONPointer to use for getting the sub-object
+     * @param replacement
+     *            a JSONObject to be rplaced with sub-object from path
+     * @return A JSONObject.
+     * @throws JSONException Thrown if there the path has a wrong key or not supported
+     */
+    public static JSONObject toJSONObject(Reader reader, JSONPointer path, JSONObject replacement) throws JSONException{
+        String[] keys = path.toString().split("/");
+        boolean read = false;
+        boolean gotIndex = false;
+        int count = 0;
+        int arrayInx = -1;
+
+        if(path.toString().length() == 1 && path.toString().charAt(0) == '/'){ // path is the root --> /
+            return replacement;
+        }
+
+        String replace = toString(replacement);
+        ArrayList<String> tokens = new ArrayList<String>();
+        JSONObject jo = new JSONObject();
+        XMLTokener x = new XMLTokener(reader);
+        Object token = null;
+        int startIndex = -1;
+        int endIndex = -1;
+        
+        try{
+        //ex: /catalog/book/1
+        for(int i = 1; i<keys.length; ) {
+            if(x.more()){
+                token = x.nextContent();
+                if(token instanceof String ){
+                    String s = (String)token;
+                    if(((i + 1) < keys.length)){
+                        if(keys[i + 1].matches("[-+]?\\d*\\.?\\d+")){ //if next key is an index for an array
+                            arrayInx = Integer.parseInt(keys[keys.length - 1]);
+                            gotIndex = true;
+                        }
+                    }
+                    if(!(s.equals("/"+keys[i])) && s.contains(keys[i]) && s.contains(">")){ //if openning tag
+                        tokens.add((String)token);
+                        startIndex = tokens.size()-1;
+                        if(i == keys.length-1 || read){ //need to parse opennign tag
+                            String[] insideTag = s.split(" ");
+                            for(int j =0; j< insideTag.length; j++){
+                                if(insideTag[j].equals(keys[i]) || insideTag[j].equals(keys[i]+">"))
+                                    continue;
+                                else if(insideTag[j].contains("=")){
+                                    String[] keyValue = insideTag[j].split("=");
+                                    String value =  keyValue[1];
+
+                                    if(value.contains(">")){
+                                        if(value.indexOf('>') != value.length()-1){
+                                            String[] contents = value.split(">");
+                                            tokens.add("content" + ">" + contents[1]);
+                                            tokens.add("/"+"content"+">");
+                                            value =contents[0];
+                                        }
+                                        else{
+                                            value = value.replace(">", "");
+                                        }
+                                    }
+
+                                    if(value.contains("\"")){
+                                        value = value.replaceAll("\"", "");
+                                    }
+                                    
+                                    tokens.add(keyValue[0] + ">" + value);
+                                    tokens.add("/"+keyValue[0]+">");
+                                }
+                            }
+                        }
+                        
+                        if(i == keys.length-1 || read){
+                            do{
+                                token = x.nextContent();
+                                if(token instanceof String ){
+                                    tokens.add((String)token);
+                                }
+                            }while(!(token.toString()).equals("/"+keys[i]+">"));
+                            endIndex = tokens.size()-1;
+                        }
+                        if(!gotIndex){
+                            i++;
+                        }
+                        if(read){
+                            break;
+                        }
+                    }
+                    else{
+                        tokens.add((String)token);
+                    }
+                    if(gotIndex){
+                        if(s.equals("/"+keys[i]+">")){
+                            count++;
+                            if(count == arrayInx){
+                                read = true;
+                                
+                            }
+                        }
+                    }
+                }
+            }
+            else{ //could not find subobject based ob path
+                throw new JSONException("Given path is incorrect. Cannot replace sub-object");
+            }
+        }
+        while(x.more()){
+            token = x.nextContent();
+            if(token instanceof String){
+                tokens.add((String)token);
+            }
+        }
+        String something = "";
+        for(int i =0; i<tokens.size(); i++){
+            if( i == startIndex){
+                String e = tokens.get(i);
+                if(e.contains(" ")){
+                    e = "<" + e.substring(0 , e.indexOf(" ")) + ">";
+                    something += e;
+                }
+                else{
+                    something += ("<" + e); 
+                }
+               
+            }
+            else if( i > startIndex && i <endIndex){
+                continue;
+            }
+            else if(i == endIndex){
+                String e = tokens.get(i);
+                something += replace;
+                something += ("<" + e);
+            }
+            else{
+                something += ("<" + tokens.get(i)); 
+            }
+        }
+
+        Reader somethingReader = new StringReader(something);
+        jo = toJSONObject(somethingReader);
+    }
+    catch(JSONException e){
+        throw e;
+    }
+    catch(Exception e){
+        throw new JSONException("Object was not created. Parsing of the given Path is not supported. " + e.getMessage());
+    }
+
+        return jo;
+
+    }
+
 }

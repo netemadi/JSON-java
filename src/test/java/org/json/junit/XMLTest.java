@@ -30,14 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +44,8 @@ import org.json.XMLXsiTypeConverter;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.json.JSONPointer;
+
 
 
 /**
@@ -1068,4 +1063,173 @@ public class XMLTest {
             fail("Expected to be unable to modify the config");
         } catch (Exception ignored) { }
     }
+
+    @Test
+    public void testNonPathArray() throws Exception{
+
+            JSONPointer jp = new JSONPointer ("/catalog");
+
+            InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+            Reader fileReader = new InputStreamReader(xmlStream);
+            JSONObject actObj = XML.toJSONObject(fileReader, jp);
+
+            InputStream xmlStream2 = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+            Reader fileReader2 = new InputStreamReader(xmlStream2);
+            JSONObject expObj = XML.toJSONObject(fileReader2);
+            expObj = (JSONObject)expObj.query(jp);
+    
+            assertEquals("Checking path with non array key!", expObj.toString(), actObj.toString());
+    }
+    
+    @Test
+    public void testPathArray() {
+
+        JSONPointer jp = new JSONPointer ("/catalog/book/1");
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        JSONObject actObj = XML.toJSONObject(fileReader, jp);
+
+        InputStream xmlStream2 = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader2 = new InputStreamReader(xmlStream2);
+        JSONObject expObj = XML.toJSONObject(fileReader2);
+        expObj = (JSONObject)expObj.query(jp);
+
+        assertEquals("Checking path with array index!", expObj.toString(), actObj.toString());
+    }
+
+    /**
+     * if a wrong key in the path, an JSONException is expected
+     */
+    @Test
+    public void testWrongKeyInPath() throws Exception {
+
+
+            JSONPointer jp = new JSONPointer("/catalogs");
+
+            InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+            Reader fileReader = new InputStreamReader(xmlStream);
+        try {
+            JSONObject actObj = XML.toJSONObject(fileReader, jp);
+            fail("Expecting a JSONException");
+        } catch (JSONException e) {
+            assertEquals("Expecting an exception message",
+                    "Given path is incorrect.",
+                    e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDifferentFormattedXML() throws Exception{
+
+        JSONPointer jp = new JSONPointer ("/mediawiki/siteinfo");
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("medium.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        JSONObject actObj = XML.toJSONObject(fileReader, jp);
+
+        InputStream xmlStream2 = XMLTest.class.getClassLoader().getResourceAsStream("medium.xml");
+        Reader fileReader2 = new InputStreamReader(xmlStream2);
+        JSONObject expObj = XML.toJSONObject(fileReader2);
+        expObj = (JSONObject)expObj.query(jp);
+
+        assertEquals("Checking path with non array key!", expObj.toString(), actObj.toString());
+    }
+
+    /**
+     *  Replace the sub-object within an JOSNObject using given path with a another JSONObject.
+     *  Use Query() and the path to get the nwely changed subject to compare and confirm it is
+     *  changed as expected
+     */
+    @Test
+    public void testReplaceSubObjectOBJ1() throws Exception{
+
+        JSONPointer jp = new JSONPointer ("/catalog/book/3");
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+
+
+
+        JSONObject newJO = new JSONObject();
+        newJO.put("curse1", "261P");
+        newJO.put("curse2", "262P");
+        JSONObject actObj = XML.toJSONObject(fileReader, jp, newJO);
+
+        //check if sub-object is changed
+        actObj = (JSONObject)actObj.query(jp);
+
+        assertEquals("Replacing sub-object in JSONObject", newJO.toString(), actObj.toString());
+    }
+
+    /**
+     * if a wrong key in the path, an JSONException is expected
+     */
+    @Test
+    public void testReplaceSubObjWithWrongKey() throws Exception {
+
+
+        JSONPointer jp = new JSONPointer("/catalogs");
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+
+        JSONObject newJO = new JSONObject();
+        newJO.put("curse1", "261P");
+        newJO.put("curse2", "262P");
+        try {
+            JSONObject actObj = XML.toJSONObject(fileReader, jp, newJO);
+            fail("Expecting a JSONException");
+        } catch (JSONException e) {
+            assertEquals("Expecting an exception message",
+                    "Given path is incorrect. Cannot replace sub-object",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     *  Replace the sub-object within an JOSNObject using given path with a another JSONObject.
+     *  Use Query() and the path to get the nwely changed subject to compare and confirm it is
+     *  changed as expected
+     */
+    @Test
+    public void testReplaceSubObjectOBJ2() throws Exception{
+
+        JSONPointer jp = new JSONPointer ("/catalog/book/3");
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+
+
+
+        JSONObject newJO = new JSONObject();
+        newJO.put("quarter1", "Fall2020");
+        newJO.put("quarter2", "Winter2021");
+        JSONObject newJO2 = new JSONObject();
+        newJO2.put("UCI", newJO);
+        JSONObject actObj = XML.toJSONObject(fileReader, jp, newJO2);
+
+        //check if sub-object is changed
+        actObj = (JSONObject)actObj.query(jp);
+
+        assertEquals("Replacing sub-object in JSONObject", newJO2.toString(), actObj.toString());
+    }
+
+    @Test
+    public void testLargeFile() throws Exception{
+
+        JSONPointer jp = new JSONPointer ("/root/row/10");
+
+        InputStream xmlStream2 = XMLTest.class.getClassLoader().getResourceAsStream("SampleLarge.xml");
+        Reader fileReader2 = new InputStreamReader(xmlStream2);
+        JSONObject expObj = XML.toJSONObject(fileReader2);
+        expObj = (JSONObject)expObj.query(jp);
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("SampleLarge.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        JSONObject actObj = XML.toJSONObject(fileReader, jp);
+
+        assertEquals("Checking path with non array key!", expObj.toString(), actObj.toString());
+    }
+
 }
