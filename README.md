@@ -9,7 +9,7 @@ In this project we are working on 3 different XML files in order to test our fun
       * Path can be just the tag names like "wikimedia/siteinfo/namespaces" in "medium.xml" which should return an array of namespaces from XML file but in JSON file.
       * Or path can be "wikimedia/siteinfo/namespaces/namespace/2" in "medium.xml" which should return the third element of namespaces array as in JSON file.
 
-#Some of our edge cases which we are not covering in this project:
+# Some of our edge cases which we are not covering in this project:
   - Sometimes in some XML files we see something like the blew open tag which has some keys and values ---> 
     "<mediawiki xmlns="Example1" xmlns:xsi="Example2" xsi:schemaLocation="Example3" version="0.10" xml:lang="en">" 
     this will be acceptable if there is no whitespaces between values, for example "xsi:schemaLocation="Example3 Example4" is not acceptable in our case and it will only return the first value not both. 
