@@ -1,3 +1,55 @@
+# 262P-milestone2
+
+In this project we are forking the JSON-Java repo which has the package org.json.
+The aim of this prorject is to add 2 new functionality to this library.  
+In this project we are working on 3 different XML files in order to test our functionalities (small.xml, medium.xml, ...)
+The first one is getting a reader and JSONPointer path:
+  - The function will start parsing the XML file reading line by line (token by token)
+  - Splitting the path: 
+      * Path can be just the tag names like "wikimedia/siteinfo/namespaces" in "medium.xml" which should return an array of namespaces from XML file but in JSON file.
+      * Or path can be "wikimedia/siteinfo/namespaces/namespace/2" in "medium.xml" which should return the third element of namespaces array as in JSON file.
+
+Some of our edge cases which we are not covering in this project:
+  - Sometimes in some XML files we see something like the blew open tag which has some keys and values ---> 
+    <mediawiki xmlns="Example1" xmlns:xsi="Example2" xsi:schemaLocation="Example3" version="0.10" xml:lang="en"> 
+    this will be acceptable if there is no whitespaces between values, for example "xsi:schemaLocation="Example3 Example4" is not acceptable in our case and it will only return the first value not both. 
+  - Close tag with value is not acceptable in our functionality. Not Acceptable Example "<mediawiki Example/>
+  - If the last key in your path is an array the program will return the first element (index 0) of that array. Example: if you pass
+    "wikimedia/siteinfo/namespaces/namespace" as a key and using "medium.xml" file will return:       
+      {
+        "key": -2,
+        "case": "first-letter",
+        "content": "Media"
+      },
+
+The second one is getting a reader and JSONPointer path and a JSONObject to replace:
+  - This function will find the sub obj from path and will replace it with the JSONObject given as an argument
+  
+
+How to run the program: 
+- Fork the project
+- Go to src > main > java and run:
+  * javac org/json/*.java
+  * jar cf json-java.jar org/json/*.class
+- Navigate to src > test > java > XMLTest.java and run the JUNIT test
+- Actual functionality is under src > main > java > org.json > XML.java
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 JSON in Java [package org.json]
 ===============================
 
