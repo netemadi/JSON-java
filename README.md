@@ -15,7 +15,10 @@ Some of our edge cases which we are not covering in this project:
     <mediawiki xmlns="Example1" xmlns:xsi="Example2" xsi:schemaLocation="Example3" version="0.10" xml:lang="en">
     ```
     this will be acceptable if there is no whitespaces between values, for example "xsi:schemaLocation="Example3 Example4" is not acceptable in our case and it         will only return the first value not both. 
-  - Close tag with value is not acceptable in our functionality. Example is Not Acceptable  ```xml "<mediawiki Example/> ```
+  - Close tag with value is not acceptable in our functionality. Example is Not Acceptable  
+    ```xml 
+    <mediawiki Example/> 
+    ```
   - If the last key in your path is an array the program will return the first element (index 0) of that array. Example: if you pass
     "wikimedia/siteinfo/namespaces/namespace" as a key and using "medium.xml" file will return:       
       {
