@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<_catalog_262P_>
+    <_book_262P_ _id_262P_="bk101">
+        <_author_262P_>Gambardella, Matthew</_author_262P_>
+        <_title_262P_>XML Developer's Guide</_title_262P_>
+        <_genre_262P_>Computer</_genre_262P_>
+        <_price_262P_>44.95</_price_262P_>
+        <_publish_date_262P_>2000-10-01</_publish_date_262P_>
+        <_description_262P_>An in-depth look at creating applications
+            with XML.</_description_262P_>
+    </_book_262P_>
+    <_book_262P_ _id_262P_="bk102">
+        <_author_262P_>Ralls, Kim</_author_262P_>
+        <_title_262P_>Midnight Rain</_title_262P_>
+        <_genre_262P_>Fantasy</_genre_262P_>
+        <_price_262P_>5.95</_price_262P_>
+        <_publish_date_262P_>2000-12-16</_publish_date_262P_>
+        <_description_262P_>A former architect battles corporate zombies,
+            an evil sorceress, and her own childhood to become queen
+            of the world.</_description_262P_>
+    </_book_262P_>
+</_catalog_262P_>

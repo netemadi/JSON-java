@@ -45,6 +45,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.json.JSONPointer;
+import java.util.function.Function;
 
 
 
@@ -1231,5 +1232,145 @@ public class XMLTest {
 
         assertEquals("Checking path with non array key!", expObj.toString(), actObj.toString());
     }
+
+    /**
+     * Testing a XML that will add "content" as the key attribute
+     */
+@Test
+public void changingKeyWithContentKey() throws Exception{
+    String xmlStr =
+                    "   <note>\n"+
+                    "       <to>Joe Tester</to>\n"+
+                    "       <street>19 Capobella</street>\n"+
+                    "       <namespace case=\"first_letter\">Media</namespace>"+
+                    "   </note>\n";
+
+    String expectedStr =
+            "{\"_note_262P_\":{\"_street_262P_\":\"19 Capobella\","+
+                    "\"_namespace_262P_\":{\"_case_262P_\":\"first_letter\",\"_content_262P_\":\"Media\"},"+
+                    "\"_to_262P_\":\"Joe Tester\"}}";
+
+
+    Reader xml_reader = new StringReader(xmlStr);
+    Function<String,String> temp = a->("_"+a+"_262P_");
+
+    JSONObject jo = XML.toJSONObject(xml_reader, temp);
+    assertEquals("Checking content key", expectedStr, jo.toString());
+}
+
+    /**
+     * Testing a XML that includes an empty Tag
+     */
+    @Test
+    public void changingKeyWithEmptyTag() throws Exception{
+        String xmlStr =
+                "   <note>\n"+
+                        "       <to>Joe Tester</to>\n"+
+                        "       <street>19 Capobella</street>\n"+
+                        "       <emptyTag/>\n"+
+                        "   </note>\n";
+
+        String expectedStr =
+                "{\"_note_262P_\":{\"_street_262P_\":\"19 Capobella\",\"_to_262P_\":\"Joe Tester\","+
+                        "\"_emptyTag_262P_\":\"\"}}";
+
+
+        Reader xml_reader = new StringReader(xmlStr);
+        Function<String,String> temp = a->("_"+a+"_262P_");
+
+        JSONObject jo = new JSONObject();
+        jo = XML.toJSONObject(xml_reader, temp);
+        assertEquals("Checking empty tag", expectedStr, jo.toString());
+    }
+
+    /**
+     * Testing a XML that includes CDATA
+     */
+    @Test
+    public void checkingXMLWithCDATA() throws Exception{
+        String xmlStr = "<exception class=\"java.lang.AssertionError\">"+
+            "<short-stacktrace>"+
+              "<![CDATA[\n"+
+                "                java.lang.AssertionError\n"+
+                "                ... Removed 22 stack frames\n"+
+              "              ]]>"+
+            "</short-stacktrace>"+ "</exception>" ;
+
+
+        String expectedStr = "{\"_exception_262P_\":{"+
+            "\"_short-stacktrace_262P_\":"+
+            "\"\\n                java.lang.AssertionError\\n                ... Removed 22 stack frames\\n              \","+
+                "\"_class_262P_\":\"java.lang.AssertionError\"}}";
+
+
+
+        Reader xml_reader = new StringReader(xmlStr);
+        Function<String,String> temp = a->("_"+a+"_262P_");
+
+        JSONObject jo = new JSONObject();
+        jo = XML.toJSONObject(xml_reader, temp);
+        assertEquals("Checking XML with CDATA", expectedStr, jo.toString());
+    }
+
+    /**
+     * Testing a simple XML that includes all the common keys or criteria.
+     */
+    @Test
+    public void changingKeysInSimpleXML() throws Exception{
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "   <address>\n"+
+                        "       <name>Joe Tester</name>\n"+
+                        "       <street>[CDATA[Baker street 5]</street>\n"+
+                        "       <NothingHere/>\n"+
+                        "       <TrueValue>true</TrueValue>\n"+
+                        "       <FalseValue>false</FalseValue>\n"+
+                        "       <NullValue>null</NullValue>\n"+
+                        "       <PositiveValue>42</PositiveValue>\n"+
+                        "       <NegativeValue>-23</NegativeValue>\n"+
+                        "       <DoubleValue>-23.45</DoubleValue>\n"+
+                        "       <Nan>-23x.45</Nan>\n"+
+                        "       <ArrayOfNum>1, 2, 3, 4.1, 5.2</ArrayOfNum>\n"+
+                        "   </address>\n"+
+                        "</addresses>";
+
+        String expectedStr =
+                "{\"_addresses_262P_\":{\"_xsi:noNamespaceSchemaLocation_262P_\":\"test.xsd\"," +
+                        "\"_address_262P_\":{\"_street_262P_\":\"[CDATA[Baker street 5]\","+
+                        "\"_NullValue_262P_\":null,\"_NothingHere_262P_\":\"\",\"_FalseValue_262P_\":false,"+
+                        "\"_NegativeValue_262P_\":-23,\"_DoubleValue_262P_\":-23.45,\"_TrueValue_262P_\":true," +
+                        "\"_Nan_262P_\":\"-23x.45\",\"_PositiveValue_262P_\":42,\"_ArrayOfNum_262P_\":" +
+                        "\"1, 2, 3, 4.1, 5.2\",\"_name_262P_\":\"Joe Tester\"},\"_xmlns:xsi_262P_\":"+
+                        "\"http://www.w3.org/2001/XMLSchema-instance\"}}";
+
+
+        Reader xml_reader = new StringReader(xmlStr);
+        Function<String,String> temp = a->("_"+a+"_262P_");
+
+        JSONObject jo = XML.toJSONObject(xml_reader, temp);
+        assertEquals("Changing keys in a simple XML file", expectedStr, jo.toString());
+    }
+
+    /**
+     * Testing a XML file to read from a file directly
+     */
+    @Test
+    public void checkingKeysUsingXMLFile() throws Exception {
+        Function<String,String> temp = a->("_"+a+"_262P_");
+
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("actualM3XML.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        JSONObject actObj = XML.toJSONObject(fileReader, temp);
+
+        InputStream expStream = XMLTest.class.getClassLoader().getResourceAsStream("expectM3XML.xml");
+        Reader fileReader2 = new InputStreamReader(expStream);
+        JSONObject expObj = XML.toJSONObject(fileReader2);
+
+        assertEquals("Checking key using XML file!",expObj.toString() ,actObj.toString());
+    }
+
+
 
 }

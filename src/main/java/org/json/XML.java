@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 
 /**
@@ -1143,6 +1144,238 @@ public class XML {
 
         return jo;
 
+    }
+
+    /**
+     * Milestone3
+     *
+     * Create a json object using the reader, and apply myType to its keys
+     *
+     * @param reader
+     *            A Reader to XML file.
+     * @param myType
+     *            A Function which should be passed by the user and will accept a string
+     *            and return a string
+     * @return A JSONObject.
+     * @throws JSONException Thrown if there the path has a wrong key or not supported
+     */
+    public static JSONObject toJSONObject(Reader reader, Function<String,String> myType) throws JSONException{
+        JSONObject jo = new JSONObject();
+        XMLTokener x = new XMLTokener(reader);
+        while (x.more()) {
+            x.skipPast("<");
+            if(x.more()) {
+                parse2(x, jo, null, XMLParserConfiguration.ORIGINAL, myType);
+            }
+        }
+        return jo;
+    }
+
+    /**
+     * Milestone3, helper
+     *
+     * Scan the content following the named tag, apply the function passed as the parameter
+     * to the named tag before attaching it to the context. The keys in the context will be changed based
+     * on the func parameter
+     *
+     * @param x
+     *            The XMLTokener containing the source string.
+     * @param context
+     *            The JSONObject that will include the new material.
+     * @param name
+     *            The tag name.
+     * @param func
+     *            to be applied to the tag names before attaching them to context.
+     * @return true if the close tag is processed.
+     * @throws JSONException
+     */
+    private static boolean parse2(XMLTokener x, JSONObject context, String name, XMLParserConfiguration config, Function<String,String> func)
+            throws JSONException {
+        char c;
+        int i;
+        JSONObject jsonObject = null;
+        String string;
+        String tagName;
+        Object token;
+        XMLXsiTypeConverter<?> xmlXsiTypeConverter;
+
+        // Test for and skip past these forms:
+        // <!-- ... -->
+        // <! ... >
+        // <![ ... ]]>
+        // <? ... ?>
+        // Report errors for these forms:
+        // <>
+        // <=
+        // <<
+
+        token = x.nextToken();
+
+        // <!
+
+        if (token == BANG) {
+            c = x.next();
+            if (c == '-') {
+                if (x.next() == '-') {
+                    x.skipPast("-->");
+                    return false;
+                }
+                x.back();
+            } else if (c == '[') {
+                token = x.nextToken();
+                if ("CDATA".equals(token)) {
+                    if (x.next() == '[') {
+                        string = x.nextCDATA();
+                        if (string.length() > 0) {
+                            String changeTo = func.apply(config.getcDataTagName());
+                            context.accumulate(changeTo, string);
+                        }
+                        return false;
+                    }
+                }
+                throw x.syntaxError("Expected 'CDATA['");
+            }
+            i = 1;
+            do {
+                token = x.nextMeta();
+                if (token == null) {
+                    throw x.syntaxError("Missing '>' after '<!'.");
+                } else if (token == LT) {
+                    i += 1;
+                } else if (token == GT) {
+                    i -= 1;
+                }
+            } while (i > 0);
+            return false;
+        } else if (token == QUEST) {
+
+            // <?
+            x.skipPast("?>");
+            return false;
+        } else if (token == SLASH) {
+
+            // Close tag </
+
+            token = x.nextToken();
+            if (name == null) {
+                throw x.syntaxError("Mismatched close tag " + token);
+            }
+            if (!token.equals(name)) {
+                throw x.syntaxError("Mismatched " + name + " and " + token);
+            }
+            if (x.nextToken() != GT) {
+                throw x.syntaxError("Misshaped close tag");
+            }
+            return true;
+
+        } else if (token instanceof Character) {
+            throw x.syntaxError("Misshaped tag");
+
+            // Open tag <
+
+        } else {
+            tagName = (String) token;  //key name
+            token = null;
+            jsonObject = new JSONObject();
+            boolean nilAttributeFound = false;
+            xmlXsiTypeConverter = null;
+            for (;;) {
+                if (token == null) {
+                    token = x.nextToken();
+                }
+                // attribute = value
+                if (token instanceof String) {
+                    string = (String) token; //key
+                    token = x.nextToken();
+                    if (token == EQ) {
+                        token = x.nextToken();
+                        if (!(token instanceof String)) {
+                            throw x.syntaxError("Missing value");
+                        }
+
+                        if (config.isConvertNilAttributeToNull()
+                                && NULL_ATTR.equals(string)
+                                && Boolean.parseBoolean((String) token)) {
+                            nilAttributeFound = true;
+                        } else if(config.getXsiTypeMap() != null && !config.getXsiTypeMap().isEmpty()
+                                && TYPE_ATTR.equals(string)) {
+                            xmlXsiTypeConverter = config.getXsiTypeMap().get(token);
+                        } else if (!nilAttributeFound) {
+                            String changeTo = func.apply(string);
+                            jsonObject.accumulate(changeTo,
+                                    config.isKeepStrings()
+                                            ? ((String) token)
+                                            : stringToValue((String) token));
+                        }
+                        token = null;
+                    } else {
+                        String changeTo = func.apply(string);
+                        jsonObject.accumulate(changeTo, "");
+                    }
+
+
+                } else if (token == SLASH) {
+                    // Empty tag <.../>
+                    if (x.nextToken() != GT) {
+                        throw x.syntaxError("Misshaped tag");
+                    }
+                    if (nilAttributeFound) {
+                        String changeTo = func.apply(tagName);
+                        context.accumulate(changeTo, JSONObject.NULL);
+                    } else if (jsonObject.length() > 0) {
+                        String changeTo = func.apply(tagName);
+                        context.accumulate(changeTo, jsonObject);
+                    } else {
+                        String changeTo = func.apply(tagName);
+                        context.accumulate(changeTo, "");
+                    }
+                    return false;
+
+                } else if (token == GT) {
+                    // Content, between <...> and </...>
+                    for (;;) {
+                        token = x.nextContent();
+                        if (token == null) {
+                            if (tagName != null) {
+                                throw x.syntaxError("Unclosed tag " + tagName);
+                            }
+                            return false;
+                        } else if (token instanceof String) {
+                            string = (String) token;
+                            if (string.length() > 0) {
+                                if(xmlXsiTypeConverter != null) {
+                                    String changeTo = func.apply(config.getcDataTagName());
+                                    jsonObject.accumulate(changeTo,
+                                            stringToValue(string, xmlXsiTypeConverter));
+                                } else {
+                                    String changeTo = func.apply(config.getcDataTagName());
+                                    jsonObject.accumulate(changeTo,
+                                            config.isKeepStrings() ? string : stringToValue(string));
+                                }
+                            }
+
+                        } else if (token == LT) {
+                            if (parse2(x, jsonObject, tagName, config, func)) {
+                                if (jsonObject.length() == 0) {
+                                    String changeTo = func.apply(tagName);
+                                    context.accumulate(changeTo, "");
+                                } else if (jsonObject.length() == 1
+                                        && jsonObject.opt(func.apply(config.getcDataTagName())) != null) {
+                                    String changeTo = func.apply(tagName);
+                                    context.accumulate(changeTo, jsonObject.opt(func.apply(config.getcDataTagName())));
+                                } else {
+                                    String changeTo = func.apply(tagName);
+                                    context.accumulate(changeTo, jsonObject);
+                                }
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    throw x.syntaxError("Misshaped tag");
+                }
+            }
+        }
     }
 
 }
