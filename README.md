@@ -38,24 +38,26 @@ How to run the program:
 - Go to src > main > java and run:
   * javac org/json/*.java
   * jar cf json-java.jar org/json/*.class
-- Navigate to src > test > java > XMLTest.java and run the JUNIT test
+- Navigate to src > test > java > org.json.junit > XMLTest.java and run the JUNIT test
 - Actual functionality is under src > main > java > org.json > XML.java
 
 
+# 262P-milestone3
+In this part of the project we are adding a new function to change all the keys in the XML file and return Json Object.
 
+Function we added to this part: 
+```static JSONObject toJSONObject(Reader reader, YOURTYPEHERE keyTransformer)``` 
+this function will take a reader and a key from a function which we pass to (YOURTYPEHERE keyTransformer) in order 
+to change all the keys in that returing Json Object. 
+  
 
-
-
-
-
-
-
-
-
-
-
-
-
+How to run the program: 
+- Fork the project
+- Go to src > main > java and run:
+  * javac org/json/*.java
+  * jar cf json-java.jar org/json/*.class
+- Navigate to src > test > java > org.json.junit > XMLTest.java and run the JUNIT test
+- Actual functionality is under src > main > java > org.json > XML.java
 
 JSON in Java [package org.json]
 ===============================
