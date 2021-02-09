@@ -46,9 +46,18 @@ How to run the program:
 In this part of the project we are adding a new function to change all the keys in the XML file and return Json Object.
 
 Function we added to this part: 
+
 ```static JSONObject toJSONObject(Reader reader, YOURTYPEHERE keyTransformer)``` 
-this function will take a reader and a key from a function which we pass to (YOURTYPEHERE keyTransformer) in order 
+this function will take a reader and a function which we pass to (YOURTYPEHERE keyTransformer) in order 
 to change all the keys in that returing Json Object. 
+
+Time Efficacy:
+Since we have done the same function outside the library on the client side in milestone 1, now we can compare the performance. 
+We are testing both functionalities on 133 MB XML file.   
+  - The performance implications of doing this inside the library is 8.067072971 seconds. 
+  - The performance implications of doing it in client code is 10.635930817 seconds.
+
+As you can see the implementation on library side is faster than client side. 
   
 
 How to run the program: 
