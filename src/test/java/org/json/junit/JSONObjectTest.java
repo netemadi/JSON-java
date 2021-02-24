@@ -34,30 +34,16 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.json.CDL;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONPointerException;
-import org.json.JSONTokener;
-import org.json.XML;
+import org.json.*;
 import org.json.junit.data.BrokenToString;
 import org.json.junit.data.ExceptionalBean;
 import org.json.junit.data.Fraction;
@@ -3230,4 +3216,135 @@ public class JSONObjectTest {
         assertTrue("expected jsonObject.length() == 0", jsonObject.length() == 0); //Check if its length is 0
         jsonObject.getInt("key1"); //Should throws org.json.JSONException: JSONObject["asd"] not found
     }
+
+    /**
+     * Testing a JSONObject.toStream() function to see if it returns the correct and expected type
+     */
+    @Test
+    public void JSONObjectToStream(){
+        JSONObject obj = XML.toJSONObject("<Books>" +
+                                                        "<book>" +
+                                                            "<title>AAA</title>" +
+                                                            "<author>ASmith</author>" +
+                                                        "</book>" +
+                                                        "<book>" +
+                                                            "<title>BBB</title>" +
+                                                            "<author>BSmith</author>" +
+                                                        "</book></Books>");
+
+        assertTrue("type Stream", (obj.toStream() instanceof Stream));
+    }
+
+    /**
+     * Testing if using toStream() will give us the correct top level values
+     */
+    @Test
+    public void JSONObjectToStreamCompareTopLevelValue() {
+        JSONObject obj = XML.toJSONObject("<Books>" +
+                "<book>" +
+                "<title>AAA</title>" +
+                "<author>ASmith</author>" +
+                "</book>" +
+                "<book>" +
+                "<title>BBB</title>" +
+                "<author>BSmith</author>" +
+                "</book></Books>");
+
+        JSONObject j = obj.getJSONObject("Books");
+        List<Object> expected = new ArrayList<Object>();
+        expected.add(j);
+
+        List<Object> actual = obj.toStream().map(Map.Entry::getValue).collect(Collectors.toList());
+
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Testing if using toStream(), we can filter for a specific key in the top level to do some actions
+     */
+    @Test
+    public void JSONObjectToStreamUsingFilter(){
+        JSONObject obj = XML.toJSONObject("<name> santosh </name>\n" +
+                "<id> 1 </id>\n" +
+                "<id> 2 </id>\n" +
+                "<branch> BA </branch>\n" +
+                "<cgpa> 7 </cgpa>");
+
+        List<Object> expected = new ArrayList<Object>();
+        for(String key: obj.keySet()){
+            if (key.equals("id")){
+                expected.add(key+"_262");
+            }
+        }
+
+        List<Object> actual = obj.toStream().map(Map.Entry::getKey)
+                .filter(node -> ((String)node).equals("id"))
+                .map(node -> (String)node + "_262" )
+                .collect(Collectors.toList());
+
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Testing ForEach() method on the stream to do some actions after using toStream()
+     */
+    @Test
+    public void JSONObjectToStreamForEach(){
+        JSONObject obj = XML.toJSONObject("<name> santosh </name>\n" +
+                "<id> 1 </id>\n" +
+                "<branch> BA </branch>\n" +
+                "<cgpa> 7 </cgpa>");
+
+        Map<String, Object> actual = new LinkedHashMap<>();
+        obj.toStream().forEach(node -> actual.put(node.getKey()+"_262", node.getValue()));
+
+        JSONObject exp = XML.toJSONObject("<name_262> santosh </name_262>\n" +
+                "<id_262> 1 </id_262>\n" +
+                "<branch_262> BA </branch_262>\n" +
+                "<cgpa_262> 7 </cgpa_262>");
+
+        assertEquals(exp.toMap(), actual);
+    }
+
+    /**
+     * Testing toStream() method on a json object that was created using a xml file
+     */
+    @Test
+    public void JSONObjectToStreamFromFileGetValue(){
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        JSONObject actObj = XML.toJSONObject(fileReader);
+
+        JSONObject j = actObj.getJSONObject("catalog");
+        List<Object> expected = new ArrayList<Object>();
+        expected.add(j);
+
+        List<Object> actual = actObj.toStream().map(Map.Entry::getValue).collect(Collectors.toList());
+
+        assertEquals(expected, actual);
+
+    }
+
+    /**
+     * Testing if using toStream(), we can get a value for a specific key
+     */
+    @Test
+    public void JSONObjectToStreamGetValueForKey(){
+        JSONObject obj = XML.toJSONObject("<name> santosh </name>\n" +
+                "<id> 1 </id>\n" +
+                "<branch> BA </branch>\n" +
+                "<cgpa> 7 </cgpa>");
+
+        List<Object> actual = obj.toStream()
+                .filter(node -> node.getKey().equals("branch")).map(node -> node.getValue())
+                .collect(Collectors.toList());
+
+        Object j = obj.get("branch");
+        List<Object> expected = new ArrayList<Object>();
+        expected.add(j);
+
+        assertEquals(expected,actual);
+    }
+
+
 }
