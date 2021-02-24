@@ -68,6 +68,47 @@ How to run the program:
 - Navigate to src > test > java > org.json.junit > XMLTest.java and run the JUNIT test
 - Actual functionality is under src > main > java > org.json > XML.java
 
+# 262P-milestone4
+In this part we are adding streaming method to the library that allow the client code to chain operations on JSON nodes. This functionality 
+will only works on top level keys and their values. 
+
+Function we added to this part:
+
+```public Stream<Entry<String, Object>> toStream()```:
+This function returns a stream from top level of Json Object which we can apply other stream methods such as filter, forEach and collect.
+This method will work for all types of Json Objects.
+
+Some of the limitation of this method:
+In this case if the user wants to use the inner Json Object, they have to use other methods from the library, pass the path and get the Json object. Then pass the returned Json Object to the stream method. This also applies to case where the user wants to iterate through the nodes of Json Object. 
+
+JUNIT Test Cases:
+- ```public void JSONObjectToStream()```
+  - Testing a JSONObject.toStream() function to see if it returns the correct and expected type
+
+- ```public void JSONObjectToStreamCompareTopLevelValue()```
+  - Testing if using toStream() returns the correct top level values
+
+- ```public void JSONObjectToStreamUsingFilter()```
+  - Testing if using toStream(), can filter for a specific key in the top level and add a prefix 
+  
+- ``` public void JSONObjectToStreamForEach()```
+  - Testing ForEach() method on the stream and add a prefix after using toStream()
+
+- ```public void JSONObjectToStreamFromFileGetValue()```
+  - Testing toStream() method on a json object that was created using a xml file
+
+- ```public void JSONObjectToStreamGetValueForKey()```
+  -  Testing if using toStream(), we can get a value for a specific key
+
+
+How to run the program: 
+- Fork the project
+- Go to src > main > java and run:
+  * javac org/json/*.java
+  * jar cf json-java.jar org/json/*.class
+- Navigate to src > test > java > org > json > junit > JSONObjectTest.java and run the JUNIT test
+- Actual functionality is under src > main > java > org > json > JSONObject.java
+
 JSON in Java [package org.json]
 ===============================
 
