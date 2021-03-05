@@ -33,6 +33,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 
@@ -1376,6 +1379,22 @@ public class XML {
                 }
             }
         }
+    }
+
+    public static Future<JSONObject> toFutureJSONObject(Reader reader){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        return executor.submit(() -> {
+            JSONObject jo = new JSONObject();
+            XMLTokener x = new XMLTokener(reader);
+            while (x.more()) {
+                x.skipPast("<");
+                if(x.more()) {
+                    parse(x, jo, null, XMLParserConfiguration.ORIGINAL);
+                }
+            }
+            return jo;
+        });
     }
 
 }

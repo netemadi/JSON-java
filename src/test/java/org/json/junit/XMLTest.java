@@ -45,6 +45,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.json.JSONPointer;
+
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 
@@ -1365,6 +1367,25 @@ public void changingKeyWithContentKey() throws Exception{
         JSONObject actObj = XML.toJSONObject(fileReader, temp);
 
         InputStream expStream = XMLTest.class.getClassLoader().getResourceAsStream("expectM3XML.xml");
+        Reader fileReader2 = new InputStreamReader(expStream);
+        JSONObject expObj = XML.toJSONObject(fileReader2);
+
+        assertEquals("Checking key using XML file!",expObj.toString() ,actObj.toString());
+    }
+
+    @Test
+    public void testingFuturePromiseForJSONObject() throws Exception{
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        Future<JSONObject> actObjFut = XML.toFutureJSONObject(fileReader);
+
+        while(!actObjFut.isDone()){
+            Thread.sleep(100);
+        }
+
+        JSONObject actObj = actObjFut.get();
+
+        InputStream expStream = XMLTest.class.getClassLoader().getResourceAsStream("small.xml");
         Reader fileReader2 = new InputStreamReader(expStream);
         JSONObject expObj = XML.toJSONObject(fileReader2);
 
