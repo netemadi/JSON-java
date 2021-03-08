@@ -46,7 +46,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.json.JSONPointer;
 
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
 
@@ -1389,8 +1389,93 @@ public void changingKeyWithContentKey() throws Exception{
         Reader fileReader2 = new InputStreamReader(expStream);
         JSONObject expObj = XML.toJSONObject(fileReader2);
 
-        assertEquals("Checking key using XML file!",expObj.toString() ,actObj.toString());
+        assertEquals("Checking JSONObjects using Future!",expObj.toString() ,actObj.toString());
     }
+
+    @Test
+    public void testingFuturePromiseForJSONObjectUsingLargeFile() throws Exception{
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("SampleLarge.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        Future<JSONObject> actObjFut = XML.toFutureJSONObject(fileReader);
+
+        while(!actObjFut.isDone()){
+            Thread.sleep(500);
+        }
+
+        JSONObject actObj = actObjFut.get();
+
+        InputStream expStream = XMLTest.class.getClassLoader().getResourceAsStream("SampleLarge.xml");
+        Reader fileReader2 = new InputStreamReader(expStream);
+        JSONObject expObj = XML.toJSONObject(fileReader2);
+
+        assertEquals("Checking JSONObjects using Future with Large XMLfile!",expObj.toString() ,actObj.toString());
+    }
+
+    /*
+    * Expect an TimeoutException here
+    */
+    @Test
+    public void testingFuturePromiseForJSONObjectWithTimeout() throws CancellationException, ExecutionException, InterruptedException{
+        try {
+            InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("nasaMBLargeFile.xml");
+            Reader fileReader = new InputStreamReader(xmlStream);
+            Future<JSONObject> actObjFut = XML.toFutureJSONObject(fileReader);
+
+            JSONObject actObj = actObjFut.get(1L, TimeUnit.SECONDS);
+            fail("Expecting a JSONException");
+        }
+        catch(TimeoutException e){
+            assertEquals("Expecting a TimeoutException with null message",
+                    null,
+                    e.getMessage());
+        }
+    }
+
+    /*
+    * Cancel the task before it completes execution. isCancelled() should return true.
+    */
+    @Test
+    public void testingFuturePromiseForJSONObjectCancelTask() throws Exception{
+        InputStream xmlStream = XMLTest.class.getClassLoader().getResourceAsStream("SampleLarge.xml");
+        Reader fileReader = new InputStreamReader(xmlStream);
+        Future<JSONObject> actObjFut = XML.toFutureJSONObject(fileReader);
+
+        actObjFut.cancel(true);
+         assertTrue(actObjFut.isCancelled());
+    }
+
+    /*
+     * Invalid XML so A JSONException will be thrown while parsing
+     */
+    @Test
+    public void testingFuturePromiseForJSONObjecXMLString() throws Exception{
+        String xmlStr =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<addresses xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""+
+                        "   xsi:noNamespaceSchemaLocation='test.xsd'>\n"+
+                        "    <address>\n"+
+                        "       <name/>\n"+
+                        "       <!\n"+
+                        "   </address>\n"+
+                        "</addresses>";
+        Reader fileReader = new StringReader(xmlStr);
+        Future<JSONObject> actObjFut = XML.toFutureJSONObject(fileReader);
+        while(!actObjFut.isDone()){
+            Thread.sleep(100);
+        }
+
+        try {
+            JSONObject actObj = actObjFut.get();
+            fail("Expecting a JSONException");
+        } catch (ExecutionException e) {
+            assertEquals("Expecting an exception message",
+                    "org.json.JSONException: Misshaped meta tag at 213 [character 12 line 7]",
+                    e.getMessage());
+        }
+    }
+
+
+
 
 
 
