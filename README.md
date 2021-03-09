@@ -109,6 +109,41 @@ How to run the program:
 - Navigate to src > test > java > org > json > junit > JSONObjectTest.java and run the JUNIT test
 - Actual functionality is under src > main > java > org > json > JSONObject.java
 
+# 262P-milestone5
+In this part of prroject we are focusing on understand concurrent programming by providing asynchronous methods to application code. This method will allow the client code to proceed, while specifying what to do when the JSONObject becomes available. This is useful for when reading very large files.
+
+
+Function we added to this part:
+
+```public static Future<JSONObject> toFutureJSONObject(Reader reader)```
+This function takes a reader then inside the lambda function we are converting the XML function to JSONObject and finally return a future object.
+
+JUNIT Test Cases:
+- ```public void testingFuturePromiseForJSONObject()```
+  - Testing if the promissed JSONObject is the same as expected object with small XML file
+  
+- ```public void testingFuturePromiseForJSONObjectUsingLargeFile()```
+  - Testing if the promissed JSONObject is the same as expected object with large XML file
+
+- ```public void testingFuturePromiseForJSONObjectWithTimeout()```
+  - Testing a TimeoutException with null message
+
+- ```public void testingFuturePromiseForJSONObjectCancelTask()```
+  - Testing isCancelled() should return true, when canceling the task before it completes execution
+
+- ```public void testingFuturePromiseForJSONObjecXMLString()```
+  - Testing invalid XML which throws JSONException while promise throws ExecutionException
+
+
+How to run the program: 
+- Fork the project
+- Go to src > main > java and run:
+  * javac org/json/*.java
+  * jar cf json-java.jar org/json/*.class
+- Navigate to src > test > java > org > json > junit > XMLTest.javag and run the JUNIT test
+- Actual functionality is under src > main > java > org > json > XML.java
+
+
 JSON in Java [package org.json]
 ===============================
 
